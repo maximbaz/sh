@@ -741,6 +741,25 @@ func (cfg *Config) glob(base, pat string) ([]string, error) {
 				matches[i] = pathJoin2(dir, part)
 			}
 			continue
+		case !pattern.HasMeta(part, patMode):
+			var newMatches []string
+			for _, dir := range matches {
+				match := dir
+				if !filepath.IsAbs(match) {
+					match = filepath.Join(base, match)
+				}
+				match = pathJoin2(match, part)
+				info, err := os.Stat(match)
+				if err != nil {
+					continue
+				}
+				if wantDir && !info.IsDir() {
+					continue
+				}
+				newMatches = append(newMatches, pathJoin2(dir, part))
+			}
+			matches = newMatches
+			continue
 		case part == "**" && cfg.GlobStar:
 			for i, match := range matches {
 				// "a/**" should match "a/ a/b a/b/cfg ..."; note
